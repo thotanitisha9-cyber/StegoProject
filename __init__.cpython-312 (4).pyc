@@ -1,0 +1,60 @@
+import wave
+import numpy as np
+from scipy.stats import entropy
+
+# Real Audio Steganalysis
+# Detection Concept:
+# LSBs of clean audio are not perfectly random (they correlate with audio content).
+# LSBs of Stego audio (encrypted text) are effectively random noise.
+# We measure the Entropy of the LSB stream. High Entropy -> Suspicious.
+
+def analyze_audio_lsb(audio_path):
+    try:
+        song = wave.open(audio_path, mode='rb')
+        n_frames = song.getnframes()
+        frames = song.readframes(n_frames)
+        frame_bytes = bytearray(list(frames))
+        song.close()
+        
+        # Extract LSBs
+        # We can just look at the byte values. 
+        # For 16-bit audio, the LSB is in every 2nd byte.
+        # But let's just extract the LSB of EVERY byte for simplicity & robustness against 8-bit/16-bit confusion.
+        
+        lsb_bits = []
+        # Optimization: Don't process 50MB file. Process first 100,000 bytes (where header/data usually is).
+        limit = min(len(frame_bytes), 100000)
+        
+        for i in range(limit):
+            lsb_bits.append(frame_bytes[i] & 1)
+            
+        # Calculate Entropy
+        # 0 = All zeros or all ones (Determination)
+        # 1 = Perfectly random (50% zeros, 50% ones)
+        
+        _, counts = np.unique(lsb_bits, return_counts=True)
+        # Shannon entropy base 2
+        ent = entropy(counts, base=2)
+        
+        # Interpretation
+        # Clean Audio LSB often has entropy < 0.9 (depending on recording quality)
+        # Encrypted Stego has entropy ~ 0.99 - 1.0
+        
+        # Heuristic Mapping to "Stego Probability"
+        # 0.0 - 0.90 -> 0% - 40%
+        # 0.90 - 0.98 -> 40% - 80%
+        # 0.98 - 1.00 -> 80% - 100%
+        
+        prob_stego = 0.0
+        if ent < 0.9:
+            prob_stego = (ent / 0.9) * 0.40
+        elif ent < 0.98:
+            prob_stego = 0.40 + ((ent - 0.9) / 0.08) * 0.40
+        else:
+            prob_stego = 0.80 + ((ent - 0.98) / 0.02) * 0.20
+            
+        return prob_stego, ent
+        
+    except Exception as e:
+        print(f"Error analyzing audio: {e}")
+        return 0.0, 0.0

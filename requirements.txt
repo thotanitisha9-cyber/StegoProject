@@ -1,0 +1,14 @@
+flask
+pillow
+cryptography
+numpy
+scikit-learn
+joblib
+matplotlib
+pandas
+seaborn
+rich
+scikit-image
+opencv-python-headless
+torch
+torchvision

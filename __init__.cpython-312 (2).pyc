@@ -1,0 +1,76 @@
+from PIL import Image
+import io
+import os
+
+DELIMITER = "11111110"  # 8-bit delimiter for app compatibility
+CLI_DELIMITER_SUFFIX = "11111111" # main.py used a longer one, but let's standardize on app.py's or handle both?
+# content from app.py uses "11111110"
+# content from main.py uses "1111111111111110"
+# We will support the App's version primarily as it is the main focus, 
+# but we can try to be robust. Let's stick to the app's delimiter for consistency.
+
+def encode_text_in_image(text, input_image="cover.png"):
+    """
+    Embeds text into an image using LSB steganography.
+    input_image: path or file-like object
+    Returns: BytesIO object of the new image (PNG)
+    """
+    if isinstance(input_image, Image.Image):
+        img = input_image.convert("RGB")
+    elif hasattr(input_image, 'read'):
+        img = Image.open(input_image).convert("RGB")
+    else:
+        img = Image.open(input_image).convert("RGB")
+
+    # App logic:
+    binary_text = ''.join(format(ord(c), '08b') for c in text) + DELIMITER
+
+    pixels = list(img.getdata())
+    if len(binary_text) > len(pixels) * 3:
+        raise ValueError("❌ Message too long for image")
+
+    data_index = 0
+    new_pixels = []
+
+    for r, g, b in pixels:
+        if data_index < len(binary_text):
+            r = (r & 254) | int(binary_text[data_index])
+            data_index += 1
+        if data_index < len(binary_text):
+            g = (g & 254) | int(binary_text[data_index])
+            data_index += 1
+        if data_index < len(binary_text):
+            b = (b & 254) | int(binary_text[data_index])
+            data_index += 1
+        new_pixels.append((r, g, b))
+
+    img.putdata(new_pixels)
+    output = io.BytesIO()
+    img.save(output, format="PNG")
+    output.seek(0)
+    return output
+
+def decode_text_from_image(image_path_or_file):
+    """
+    Extracts text from an image.
+    image_path_or_file: path or file-like object
+    """
+    img = Image.open(image_path_or_file)
+    pixels = list(img.getdata())
+
+    binary = ""
+    for pixel in pixels:
+        for color in pixel[:3]:
+            binary += str(color & 1)
+
+    chars = []
+    for i in range(0, len(binary), 8):
+        byte = binary[i:i+8]
+        if byte == DELIMITER:
+            break
+        try:
+            chars.append(chr(int(byte, 2)))
+        except:
+            pass # ignore invalid chars if any
+
+    return ''.join(chars)

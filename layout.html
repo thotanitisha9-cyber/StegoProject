@@ -1,0 +1,345 @@
+{% extends "layout.html" %}
+
+{% block body_class %}bg-gradient-audio{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-10">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
+        <div>
+            <h2 class="text-3xl font-bold font-display text-white mb-2">Audio Forensics</h2>
+            <p class="text-gray-400 text-sm">WAV Signal LSB Modification.</p>
+        </div>
+        <a href="/menu"
+            class="px-4 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm">
+            <i class="fas fa-arrow-left mr-2"></i> Dashboard
+        </a>
+    </div>
+
+    <!-- Error/Flash Messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 flex items-center gap-3">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="grid lg:grid-cols-2 gap-8">
+
+        <!-- ENCODE CARD -->
+        <div class="glass-panel p-8 rounded-2xl relative group hover:border-neon-purple/30 transition-all">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                <span
+                    class="w-8 h-8 rounded bg-neon-purple/20 flex items-center justify-center text-neon-purple text-sm"><i
+                        class="fas fa-lock"></i></span>
+                Encode Audio Stream
+            </h3>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-white/10 mb-6 font-mono text-sm">
+                <button onclick="switchTab('upload')" id="tab-upload"
+                    class="px-4 py-2 text-neon-purple border-b-2 border-neon-purple">Upload Source</button>
+                <button onclick="switchTab('record')" id="tab-record"
+                    class="px-4 py-2 text-gray-400 hover:text-white">Live Record</button>
+            </div>
+
+            <form method="POST" action="/encode_audio" enctype="multipart/form-data" class="space-y-6" id="encodeForm">
+
+                <!-- Upload Section -->
+                <div id="section-upload" class="relative">
+                    <label class="block text-xs font-mono text-gray-400 mb-2">SOURCE WAV FILE</label>
+                    <input type="file" name="audio" accept=".wav" class="block w-full text-sm text-gray-400
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-neon-purple/10 file:text-neon-purple
+                        hover:file:bg-neon-purple/20 cursor-pointer bg-black/20 rounded-lg border border-white/10 p-2">
+                </div>
+
+                <!-- Record Section (Hidden by default) -->
+                <div id="section-record" class="hidden text-center bg-black/20 p-4 rounded-lg border border-white/10">
+                    <div id="visualizer" class="h-16 flex items-end justify-center gap-1 mb-4 opacity-50">
+                        <div class="w-1 bg-neon-purple h-4 animate-bounce"></div>
+                        <div class="w-1 bg-neon-purple h-8 animate-bounce delay-75"></div>
+                        <div class="w-1 bg-neon-purple h-6 animate-bounce delay-150"></div>
+                        <div class="w-1 bg-neon-purple h-10 animate-bounce delay-100"></div>
+                        <div class="w-1 bg-neon-purple h-5 animate-bounce delay-200"></div>
+                    </div>
+                    <button type="button" id="recordButton"
+                        class="px-6 py-2 rounded-full bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">
+                        <i class="fas fa-microphone mr-2"></i> Start Recording
+                    </button>
+                    <p id="recordStatus" class="text-xs text-gray-500 mt-2 font-mono">Ready to capture...</p>
+                    <input type="hidden" name="recorded_audio" id="recordedAudioInput">
+                </div>
+
+                <!-- Message Input -->
+                <div>
+                    <label class="block text-xs font-mono text-gray-400 mb-2">SECRET PAYLOAD</label>
+                    <textarea name="message" rows="4" placeholder="Enter confidential data stream..." required
+                        class="w-full bg-black/30 border border-white/10 rounded-lg p-4 text-white focus:border-neon-purple focus:ring-1 focus:ring-neon-purple outline-none transition-all placeholder-gray-600 font-mono text-sm"></textarea>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-400 text-white font-bold hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all transform hover:-translate-y-1">
+                    <i class="fas fa-wave-square mr-2"></i> Encode Signal
+                </button>
+            </form>
+
+            <!-- Encoding Results -->
+            {% if mode == 'encode' and message %}
+            <div class="mt-8 pt-6 border-t border-white/10">
+                <div class="bg-purple-500/10 border border-purple-500/30 p-4 rounded-lg flex items-start gap-3">
+                    <i class="fas fa-check-circle text-purple-500 mt-1"></i>
+                    <div>
+                        <p class="text-purple-400 font-mono text-sm">{{ message }}</p>
+                    </div>
+                </div>
+
+                <a href="/download_stego_audio"
+                    class="mt-4 block w-full py-2 text-center rounded-lg border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition-all font-bold text-sm">
+                    <i class="fas fa-download mr-2"></i> Download Stego Audio
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- DECODE CARD -->
+        <div class="glass-panel p-8 rounded-2xl relative group hover:border-gray-500/30 transition-all">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                <span class="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-gray-300 text-sm"><i
+                        class="fas fa-unlock"></i></span>
+                Extract Payload
+            </h3>
+
+            <form method="POST" action="/decode_audio" enctype="multipart/form-data" class="space-y-6">
+                <!-- File Input -->
+                <div class="relative">
+                    <label class="block text-xs font-mono text-gray-400 mb-2">STEGO AUDIO (WAV)</label>
+                    <input type="file" name="audio" accept=".wav" required class="block w-full text-sm text-gray-400
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-gray-700 file:text-gray-300
+                        hover:file:bg-gray-600 cursor-pointer bg-black/20 rounded-lg border border-white/10 p-2">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3 rounded-lg border border-gray-500 text-gray-400 hover:bg-gray-700 hover:text-white transition-all font-bold">
+                    <i class="fas fa-search mr-2"></i> Extract Signal
+                </button>
+            </form>
+
+            <!-- Decoding Results -->
+            {% if mode == 'decode' and message %}
+            <div class="mt-8 pt-6 border-t border-white/10">
+                <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
+                    <div class="text-xs text-blue-400 mb-2 font-mono">DECRYPTED STREAM:</div>
+                    <p class="text-white font-mono text-sm break-all">{{ message }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</section>
+
+<script>
+    // Tab Switching Logic
+    function switchTab(tab) {
+        document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById('section-' + tab).classList.remove('hidden');
+
+        document.querySelectorAll('[id^="tab-"]').forEach(el => {
+            el.classList.remove('text-neon-purple', 'border-b-2', 'border-neon-purple');
+            el.classList.add('text-gray-400');
+        });
+        document.getElementById('tab-' + tab).classList.add('text-neon-purple', 'border-b-2', 'border-neon-purple');
+        document.getElementById('tab-' + tab).classList.remove('text-gray-400');
+    }
+
+    // --- CLIENT-SIDE WAV ENCODER ---
+    // MediaRecorder produces WebM/Ogg which Python's wave module cannot read.
+    // We must encode to PCM WAV manually.
+
+    let audioContext;
+    let mediaStream;
+    let mainProcessor;
+    let audioBuffer = [];
+    let isRecording = false;
+
+    const recordButton = document.getElementById('recordButton');
+    const statusText = document.getElementById('recordStatus');
+    const audioInput = document.getElementById('recordedAudioInput');
+
+    // Helper: Convert Float32Array to Int16Array
+    function floatTo16BitPCM(output, offset, input) {
+        for (let i = 0; i < input.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, input[i]));
+            s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            output.setInt16(offset, s, true);
+        }
+    }
+
+    // Helper: Write WAV Header
+    function writeWAVHeader(view, length, sampleRate) {
+        // RIFF chunk descriptor
+        view.setUint32(0, 0x46464952, true); // "RIFF"
+        view.setUint32(4, 36 + length, true); // ChunkSize
+        view.setUint32(8, 0x45564157, true); // "WAVE"
+        // fmt sub-chunk
+        view.setUint32(12, 0x20746d66, true); // "fmt "
+        view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+        view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+        view.setUint16(22, 1, true); // NumChannels (1 for Mono)
+        view.setUint32(24, sampleRate, true); // SampleRate
+        view.setUint32(28, sampleRate * 2, true); // ByteRate (SampleRate * BlockAlign)
+        view.setUint16(32, 2, true); // BlockAlign (NumChannels * BitsPerSample/8)
+        view.setUint16(34, 16, true); // BitsPerSample
+        // data sub-chunk
+        view.setUint32(36, 0x61746164, true); // "data"
+        view.setUint32(40, length, true); // Subchunk2Size
+    }
+
+    // Helper: Merge Buffers
+    function mergeBuffers(buffers, len) {
+        const result = new Float32Array(len);
+        let offset = 0;
+        for (const buffer of buffers) {
+            result.set(buffer, offset);
+            offset += buffer.length;
+        }
+        return result;
+    }
+
+    if (recordButton) {
+        recordButton.addEventListener('click', async () => {
+            if (!isRecording) {
+                // --- START RECORDING ---
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                    const input = audioContext.createMediaStreamSource(mediaStream);
+                    // Create ScriptProcessor (bufferSize, inputChannels, outputChannels)
+                    mainProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                    audioBuffer = []; // Reset buffer
+
+                    mainProcessor.onaudioprocess = function (e) {
+                        if (!isRecording) return;
+                        const channelData = e.inputBuffer.getChannelData(0);
+                        // Clone data because simple reference might be reused/garbage collected
+                        audioBuffer.push(new Float32Array(channelData));
+                    };
+
+                    input.connect(mainProcessor);
+                    mainProcessor.connect(audioContext.destination);
+
+                    // UI Updates
+                    isRecording = true;
+                    recordButton.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Recording';
+                    recordButton.classList.replace('bg-red-500', 'bg-gray-600');
+                    statusText.innerText = "Recording (PCM WAV)...";
+                    document.getElementById('visualizer').style.opacity = '1';
+
+                } catch (e) {
+                    console.error("Recording error:", e);
+                    statusText.innerText = "Permission Denied or Error";
+                }
+
+            } else {
+                // --- STOP RECORDING ---
+                isRecording = false;
+
+                // Stop inputs
+                mediaStream.getTracks().forEach(track => track.stop());
+                mainProcessor.disconnect();
+                audioContext.close();
+
+                // Process Audio
+                const mergedBuffers = mergeBuffers(audioBuffer, audioBuffer.length * 4096);
+                // Actually accurate length might be slightly less if last buffer is partial? 
+                // ScriptProcessor usually fills buffer. 4096 is fixed.
+
+                // Create WAV
+                const buffer = new ArrayBuffer(44 + mergedBuffers.length * 2);
+                const view = new DataView(buffer);
+
+                // Write Header
+                writeWAVHeader(view, mergedBuffers.length * 2, audioContext.sampleRate);
+
+                // Write Data
+                floatTo16BitPCM(view, 44, mergedBuffers);
+
+                const blob = new Blob([view], { type: 'audio/wav' });
+
+                // Convert to Base64
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = () => {
+                    audioInput.value = reader.result;
+                    statusText.innerText = "WAV Captured. Ready to Encode.";
+                    statusText.classList.add('text-neon-green');
+                };
+
+                // UI Updates
+                recordButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Re-Record';
+                recordButton.classList.replace('bg-gray-600', 'bg-red-500');
+                document.getElementById('visualizer').style.opacity = '0.5';
+            }
+        });
+    }
+
+    // Form Submission Check & Data Transfer
+    document.getElementById('encodeForm').addEventListener('submit', function (e) {
+        const fileInput = document.querySelector('input[name="audio"]');
+        const recordedInput = document.getElementById('recordedAudioInput');
+
+        // Check if we have a recording but no file selected
+        if (!fileInput.files.length && recordedInput.value) {
+            // Convert base64 to Blob to File
+            // Note: We need the original BLOBS or at least convert base64 back.
+            // But wait, we have 'audioBuffer' but that's raw floats.
+            // We have the base64 in recordedInput.value.
+
+            try {
+                const base64Data = recordedInput.value.split(',')[1];
+                const binaryString = window.atob(base64Data);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const blob = new Blob([bytes], { type: 'audio/wav' });
+                const file = new File([blob], "recorded_audio.wav", { type: "audio/wav" });
+
+                // Use DataTransfer to simulate file selection
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+
+                // Clear the hidden input so we don't send duplicates (and avoid 413 on form field)
+                recordedInput.value = '';
+
+            } catch (err) {
+                console.error("Error preparing file upload:", err);
+                e.preventDefault();
+                alert("Error preparing audio for upload. Please try again.");
+                return;
+            }
+        }
+
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert("Please upload a file OR record audio first.");
+        }
+    });
+</script>
+{% endblock %}

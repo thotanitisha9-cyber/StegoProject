@@ -1,0 +1,53 @@
+from PIL import Image
+import numpy as np
+import os
+
+def compare_images(cover_path, stego_path):
+    print(f"Comparing:")
+    print(f"  Cover: {cover_path}")
+    print(f"  Stego: {stego_path}")
+    
+    if not os.path.exists(cover_path) or not os.path.exists(stego_path):
+        print("One of the files does not exist.")
+        return
+
+    img_cover = Image.open(cover_path).convert("RGB")
+    img_stego = Image.open(stego_path).convert("RGB")
+
+    arr_cover = np.array(img_cover)
+    arr_stego = np.array(img_stego)
+
+    if arr_cover.shape != arr_stego.shape:
+        print("Images have different dimensions!")
+        return
+
+    # Check for equality
+    if np.array_equal(arr_cover, arr_stego):
+        print("Images are IDENTICAL. No data hidden (or saving failed).")
+    else:
+        print("Images are DIFFERENT (Steganography applied).")
+        
+        # Calculate differences
+        diff = np.abs(arr_cover.astype(int) - arr_stego.astype(int))
+        num_diff_pixels = np.count_nonzero(np.sum(diff, axis=2))
+        total_pixels = arr_cover.shape[0] * arr_cover.shape[1]
+        
+        print(f"  - Total Pixels: {total_pixels}")
+        print(f"  - Modified Pixels: {num_diff_pixels} ({num_diff_pixels/total_pixels*100:.2f}%)")
+        print(f"  - Max pixel change: {np.max(diff)} (should be 1 for LSB)")
+        
+        # Show a sample difference
+        indices = np.where(np.sum(diff, axis=2) > 0)
+        if len(indices[0]) > 0:
+            y, x = indices[0][0], indices[1][0]
+            print(f"  - Sample Change at ({x}, {y}):")
+            print(f"    Cover: {arr_cover[y, x]}")
+            print(f"    Stego: {arr_stego[y, x]}")
+
+if __name__ == "__main__":
+    # Use the first generated pair
+    BASE_DIR = "NewDataset"
+    cover = os.path.join(BASE_DIR, "cover", "cover_001.png")
+    stego = os.path.join(BASE_DIR, "stego", "stego_001.png")
+    
+    compare_images(cover, stego)

@@ -1,0 +1,109 @@
+{% extends "layout.html" %}
+
+{% block body_class %}bg-gradient-detect{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-10">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
+        <div>
+            <h2 class="text-3xl font-bold font-display text-white mb-2">Pixel Comparison</h2>
+            <p class="text-gray-400 text-sm">Bit-level visual analysis between Cover and Stego artifacts.</p>
+        </div>
+        <a href="/menu"
+            class="px-4 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all text-sm">
+            <i class="fas fa-arrow-left mr-2"></i> Dashboard
+        </a>
+    </div>
+
+    <div class="glass-panel p-8 rounded-2xl relative overflow-hidden">
+        <!-- Decoration -->
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl"></div>
+
+        {% if error %}
+        <div
+            class="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 flex items-center gap-3 animate-pulse">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <!-- Analysis Result -->
+        <div class="text-center">
+            <h3 class="text-xl font-mono text-gray-400 mb-8 border-b border-white/5 inline-block pb-2">DIFFERENTIAL
+                ANALYSIS REPORT</h3>
+
+            {% if result.identical %}
+            <div class="bg-green-500/10 border border-green-500 p-8 rounded-xl max-w-2xl mx-auto mb-8">
+                <div class="text-4xl text-green-500 mb-4"><i class="fas fa-check-double"></i></div>
+                <h2 class="text-3xl font-bold text-green-500 font-display tracking-wider">IMAGES ARE IDENTICAL</h2>
+                <p class="text-green-400/80 mt-2 font-mono text-sm">No bit-level deviations detected.</p>
+            </div>
+            {% else %}
+            <div class="bg-red-500/10 border border-red-500 p-8 rounded-xl max-w-3xl mx-auto mb-8">
+                <div class="text-4xl text-red-500 mb-4 animate-pulse"><i class="fas fa-not-equal"></i></div>
+                <h2 class="text-3xl font-bold text-red-500 font-display tracking-wider mb-6">ANOMALIES DETECTED</h2>
+
+                <div class="grid grid-cols-2 gap-8 text-left">
+                    <div class="bg-black/40 p-6 rounded-lg border border-red-500/30">
+                        <div class="text-xs text-gray-500 font-mono mb-1">MODIFIED PIXELS</div>
+                        <div class="text-3xl font-bold text-white">{{ result.modified_pixels }}</div>
+                    </div>
+                    <div class="bg-black/40 p-6 rounded-lg border border-red-500/30">
+                        <div class="text-xs text-gray-500 font-mono mb-1">DEVIATION RATIO</div>
+                        <div class="text-3xl font-bold text-red-400">{{ result.percent_modified }}%</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <a href="/compare"
+                class="inline-block px-8 py-3 rounded-lg border border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black transition-all font-bold">
+                <i class="fas fa-layer-group mr-2"></i> Compare New Pair
+            </a>
+        </div>
+
+        {% else %}
+        <!-- Upload Form -->
+        <form method="POST" enctype="multipart/form-data" class="max-w-4xl mx-auto">
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+
+                <!-- Cover Input -->
+                <div class="relative group">
+                    <label class="block text-sm font-mono text-gray-400 mb-2">1. ORIGINAL COVER</label>
+                    <div
+                        class="border-2 border-dashed border-gray-700 bg-black/20 rounded-xl p-8 text-center hover:border-neon-cyan transition-all relative">
+                        <input type="file" name="cover" accept="image/*" required
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <i
+                            class="fas fa-image text-3xl text-gray-600 mb-2 group-hover:text-neon-cyan transition-colors"></i>
+                        <p class="text-xs text-gray-500">Select Clean Image</p>
+                    </div>
+                </div>
+
+                <!-- Stego Input -->
+                <div class="relative group">
+                    <label class="block text-sm font-mono text-gray-400 mb-2">2. SUSPECT ARTIFACT</label>
+                    <div
+                        class="border-2 border-dashed border-gray-700 bg-black/20 rounded-xl p-8 text-center hover:border-neon-purple transition-all relative">
+                        <input type="file" name="stego" accept="image/*" required
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <i
+                            class="fas fa-file-secret text-3xl text-gray-600 mb-2 group-hover:text-neon-purple transition-colors"></i>
+                        <p class="text-xs text-gray-500">Select Stego Image</p>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full btn-primary-gradient py-4 rounded-xl font-bold text-black text-lg shadow-lg hover:shadow-neon-cyan/25 transition-all transform hover:-translate-y-1">
+                <i class="fas fa-balance-scale mr-2"></i> Execute Differential Analysis
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+</section>
+{% endblock %}

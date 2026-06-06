@@ -1,0 +1,2 @@
+This is my cover text for testing text steganography.
+It looks completely normal to anyone reading it.

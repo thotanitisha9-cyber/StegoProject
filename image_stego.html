@@ -1,0 +1,36 @@
+# Machine Learning Based Detection of Steganographic Images
+
+This upgraded project adds a simple ML-based steganalysis pipeline and analysis page to evaluate model performance.
+
+## Highlights
+
+- Real ML detection using a RandomForest trained on simple image features:
+  - LSB noise fraction
+  - Grayscale histogram bins
+  - Pixel mean & variance
+- `train_model.py` to train, save model (`models/rf_model.joblib`) and scaler (`models/scaler.joblib`) and export metrics/plots to `static/analysis/`.
+- Web integration:
+  - `/results` shows Accuracy, Precision, Recall, F1, Confusion Matrix and a metrics chart.
+  - `/train` triggers training (for demo/local use).
+- Improved key derivation: Password hashed with SHA-256 before using with Fernet (safer key derivation than zero-padding).
+
+## How to train
+
+1. Ensure dependencies are installed (scikit-learn, joblib, matplotlib, pillow):
+
+   pip install -r requirements.txt
+
+2. Train model:
+
+   python train_model.py
+
+3. Visit http://127.0.0.1:5000/results to view analysis.
+
+## Future scope / suggestions
+
+- Replace RandomForest with a CNN-based steganalysis model.
+- Generate additional stego images via GANs and evaluate robustness.
+- Produce cross-dataset experiments and more rigorous statistical reporting.
+
+---
+For the final report title you can use: **Machine Learning Based Detection of Steganographic Images**.
